@@ -2,29 +2,29 @@ package com.aston.notification_service.listeners;
 
 import com.aston.notification_service.annotations.Loggable;
 import com.aston.notification_service.dto.UserEventDto;
-import com.aston.notification_service.services.UserService;
+import com.aston.notification_service.services.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 @Component
 public class UserEventListener {
-    UserService userService;
+    NotificationService notificationService;
 
     @Autowired
-    public UserEventListener(UserService userServices) {
-        this.userService = userServices;
+    public UserEventListener(NotificationService notificationServices) {
+        this.notificationService = notificationServices;
     }
 
     @Loggable
     @KafkaListener(topics = "user.created")
     public void handleUserCreated(UserEventDto userEventDto) {
-        userService.userCreatedEventFromKafkaHandler(userEventDto);
+        notificationService.userCreatedEventEmailNotification(userEventDto);
     }
 
     @Loggable
     @KafkaListener(topics = "user.deleted")
     public void handleUserDeleted(UserEventDto userEventDto) {
-        userService.userDeletedEventFromKafkaHandler(userEventDto);
+        notificationService.userDeletedEventEmailNotification(userEventDto);
     }
 }
