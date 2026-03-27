@@ -29,3 +29,4 @@ nbdist/
 .nb-gradle/
 
 **/src/main/resources/application.properties
+todo.md
