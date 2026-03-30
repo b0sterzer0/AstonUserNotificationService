@@ -22,6 +22,10 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class UserServiceTest {
+    private static final String USER_NAME = "Ivan";
+    private static final String EMAIL = "ivan@mail.com";
+    private static final int AGE = 25;
+
     @Mock
     private UserRepository userRepository;
     @Mock
@@ -36,67 +40,56 @@ public class UserServiceTest {
 
     @Test
     void getUser_ShouldReturnUser_WhenIdExists() {
-        // given
         long id = 1L;
         User user = new User();
-        UserDto expectedDto = new UserDto(id, "Ivan", "ivan@mail.com", 25, null);
+        UserDto expectedDto = new UserDto(id, USER_NAME, EMAIL, AGE, null);
 
         when(userRepository.findById(id)).thenReturn(Optional.of(user));
         when(userMapper.toDto(user)).thenReturn(expectedDto);
 
-        // when
         UserDto result = userService.getUser(id);
 
-        // then
         assertNotNull(result);
-        assertEquals("Ivan", result.name());
+        assertEquals(USER_NAME, result.name());
         verify(userRepository).findById(id);
     }
 
     @Test
     void getUser_ShouldThrowException_WhenIdNotFound() {
-        // given
         when(userRepository.findById(anyLong())).thenReturn(Optional.empty());
 
-        // when & then
         assertThrows(UserNotFoundException.class, () -> userService.getUser(1L));
     }
 
     @Test
     void createUser_ShouldSaveAndSendKafkaMessage() {
-        // given
-        UserDto inputDto = new UserDto(null, "Ivan", "ivan@mail.com", 25, null);
+        UserDto inputDto = new UserDto(null, USER_NAME, EMAIL, AGE, null);
         User user = new User();
-        UserEventDto eventDto = new UserEventDto(1L, "ivan@mail.com");
+        UserEventDto eventDto = new UserEventDto(1L, EMAIL, "CREATED");
 
         when(userMapper.addCreatedAtToDto(eq(inputDto), any())).thenReturn(inputDto);
         when(userMapper.toEntity(inputDto)).thenReturn(user);
-        when(userEventMapper.toDto(user)).thenReturn(eventDto);
+        when(userEventMapper.toDto(user, "CREATED")).thenReturn(eventDto);
         when(userMapper.toDto(user)).thenReturn(inputDto);
 
-        // when
         userService.createUser(inputDto);
 
-        // then
-        verify(userRepository).save(user); // Проверяем сохранение в БД
-        verify(kafkaTemplate).send(eq("user.created"), eq(eventDto)); // Проверяем отправку в Kafka
+        verify(userRepository).save(user);
+        verify(kafkaTemplate).send(eq("user.events"), eq(eventDto));
     }
 
     @Test
     void deleteUser_ShouldDeleteAndSendKafkaMessage() {
-        // given
         long id = 1L;
         User user = new User();
-        UserEventDto eventDto = new UserEventDto(id, "deleted@mail.com");
+        UserEventDto eventDto = new UserEventDto(id, "deleted@mail.com", "DELETED");
 
         when(userRepository.findById(id)).thenReturn(Optional.of(user));
-        when(userEventMapper.toDto(user)).thenReturn(eventDto);
+        when(userEventMapper.toDto(user, "DELETED")).thenReturn(eventDto);
 
-        // when
         userService.deleteUser(id);
 
-        // then
         verify(userRepository).delete(user);
-        verify(kafkaTemplate).send(eq("user.deleted"), eq(eventDto));
+        verify(kafkaTemplate).send(eq("user.events"), eq(eventDto));
     }
 }

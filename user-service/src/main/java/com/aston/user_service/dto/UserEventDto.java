@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Positive;
 
 public record UserEventDto(
         @NotNull @Positive Long id,
-        @NotNull @Email String email
+        @NotNull @Email String email,
+        @NotNull String eventType
 ) {
 }

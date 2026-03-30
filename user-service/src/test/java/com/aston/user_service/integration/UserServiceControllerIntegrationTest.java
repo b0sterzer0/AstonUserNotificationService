@@ -23,6 +23,9 @@ import static org.hamcrest.Matchers.*;
 @AutoConfigureMockMvc
 @Testcontainers
 public class UserServiceControllerIntegrationTest {
+    private static final String USER_NAME = "John Doe";
+    private static final String EMAIL = "john@example.com";
+
     @Container
     @ServiceConnection
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine");
@@ -39,19 +42,16 @@ public class UserServiceControllerIntegrationTest {
 
     @Test
     void shouldCreateUserAndReturnDto() throws Exception {
-        // given
-        UserDto inputDto = new UserDto(null, "John Doe", "john@example.com", 30, null);
+        UserDto inputDto = new UserDto(null, USER_NAME, EMAIL, 30, null);
 
-        // when & then
         mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(inputDto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name", is("John Doe")))
-                .andExpect(jsonPath("$.email", is("john@example.com")))
+                .andExpect(jsonPath("$.name", is(USER_NAME)))
+                .andExpect(jsonPath("$.email", is(EMAIL)))
                 .andExpect(jsonPath("$.id").exists());
 
-        // Дополнительно можно проверить, что пользователь появился в списке
         mockMvc.perform(get("/users"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(greaterThan(0))));
@@ -60,12 +60,11 @@ public class UserServiceControllerIntegrationTest {
     @Test
     void shouldReturn404WhenUserNotFound() throws Exception {
         mockMvc.perform(get("/users/999"))
-                .andExpect(status().isNotFound()); // Предполагается, что у вас есть ControllerAdvice
+                .andExpect(status().isNotFound());
     }
 
     @Test
     void shouldDeleteUser() throws Exception {
-        // Сначала создаем
         UserDto inputDto = new UserDto(null, "To Delete", "delete@example.com", 20, null);
         String response = mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -73,12 +72,8 @@ public class UserServiceControllerIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
 
         long id = objectMapper.readTree(response).get("id").asLong();
-
-        // Удаляем
         mockMvc.perform(delete("/users/" + id))
                 .andExpect(status().isOk());
-
-        // Проверяем, что больше не существует
         mockMvc.perform(get("/users/" + id))
                 .andExpect(status().isNotFound());
     }

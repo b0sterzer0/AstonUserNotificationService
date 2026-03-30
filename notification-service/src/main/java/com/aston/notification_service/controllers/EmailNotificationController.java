@@ -2,7 +2,6 @@ package com.aston.notification_service.controllers;
 
 import com.aston.notification_service.dto.UserEventDto;
 import com.aston.notification_service.services.NotificationService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,7 +15,6 @@ import java.util.Map;
 public class EmailNotificationController {
     private final NotificationService notificationService;
 
-    @Autowired
     public EmailNotificationController(NotificationService notificationService) {
         this.notificationService = notificationService;
     }

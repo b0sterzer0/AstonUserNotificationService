@@ -10,6 +10,10 @@ import java.time.LocalDateTime;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class UserMapperTest {
+    private static final String USER_NAME = "John";
+    private static final String EMAIL = "john@mail.com";
+    private static final int AGE = 25;
+
     private UserMapper userMapper;
 
     @BeforeEach
@@ -22,8 +26,8 @@ public class UserMapperTest {
         LocalDateTime now = LocalDateTime.now();
         User user = new User();
         user.setId(1L);
-        user.setName("John");
-        user.setEmail("john@mail.com");
+        user.setName(USER_NAME);
+        user.setEmail(EMAIL);
         user.setAge(25);
         user.setCreatedAt(now);
 
@@ -39,7 +43,7 @@ public class UserMapperTest {
     @Test
     void testToEntity() {
         LocalDateTime now = LocalDateTime.now();
-        UserDto dto = new UserDto(1L, "John", "john@mail.com", 25, now);
+        UserDto dto = new UserDto(1L, USER_NAME, EMAIL, AGE, now);
 
         User user = userMapper.toEntity(dto);
 
@@ -51,7 +55,7 @@ public class UserMapperTest {
 
     @Test
     void testAddCreatedAtToDto() {
-        UserDto dto = new UserDto(null, "John", "john@mail.com", 25, null);
+        UserDto dto = new UserDto(null, USER_NAME, EMAIL, AGE, null);
         LocalDateTime now = LocalDateTime.now();
 
         UserDto newDto = userMapper.addCreatedAtToDto(dto, now);

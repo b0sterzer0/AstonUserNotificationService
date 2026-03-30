@@ -22,6 +22,8 @@ import static org.mockito.Mockito.verify;
 @Testcontainers
 @SpringBootTest
 class UserEventListenerTest {
+    private static final String EMAIL = "test@mail.com";
+
 
     @Container
     static KafkaContainer kafka =
@@ -46,7 +48,7 @@ class UserEventListenerTest {
 
     @Test
     void shouldHandleUserCreatedEvent() {
-        UserEventDto dto = new UserEventDto(1L, "test@mail.com");
+        UserEventDto dto = new UserEventDto(1L, EMAIL);
         kafkaTemplate.send("user.created", dto);
         await()
                 .atMost(5, TimeUnit.SECONDS)
@@ -57,7 +59,7 @@ class UserEventListenerTest {
 
     @Test
     void shouldHandleUserDeletedEvent() {
-        UserEventDto dto = new UserEventDto(2L, "delete@mail.com");
+        UserEventDto dto = new UserEventDto(2L, EMAIL);
         kafkaTemplate.send("user.deleted", dto);
         await()
                 .atMost(5, TimeUnit.SECONDS)

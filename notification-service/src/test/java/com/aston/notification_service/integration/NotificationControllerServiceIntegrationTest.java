@@ -16,6 +16,9 @@ import static org.hamcrest.Matchers.is;
 @SpringBootTest
 @AutoConfigureMockMvc
 public class NotificationControllerServiceIntegrationTest {
+    private static final String STATUS = "success";
+    private static final String EMAIL = "welcome@test.com";
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -24,27 +27,27 @@ public class NotificationControllerServiceIntegrationTest {
 
     @Test
     void shouldReturnSuccessWhenUserCreated() throws Exception {
-        UserEventDto dto = new UserEventDto(1L, "welcome@test.com");
+        UserEventDto dto = new UserEventDto(1L, EMAIL);
 
         mockMvc.perform(post("/notification/email/user/created")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status", is("success")))
-                .andExpect(jsonPath("$.email", is("welcome@test.com")))
+                .andExpect(jsonPath("$.status", is(STATUS)))
+                .andExpect(jsonPath("$.email", is(EMAIL)))
                 .andExpect(jsonPath("$.message").exists());
     }
 
     @Test
     void shouldReturnSuccessWhenUserDeleted() throws Exception {
-        UserEventDto dto = new UserEventDto(2L, "goodbye@test.com");
+        UserEventDto dto = new UserEventDto(2L, EMAIL);
 
         mockMvc.perform(post("/notification/email/user/deleted")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status", is("success")))
-                .andExpect(jsonPath("$.email", is("goodbye@test.com")))
+                .andExpect(jsonPath("$.status", is(STATUS)))
+                .andExpect(jsonPath("$.email", is(EMAIL)))
                 .andExpect(jsonPath("$.message", is("Здравствуйте! Ваш аккаунт был удален!")));
     }
 }

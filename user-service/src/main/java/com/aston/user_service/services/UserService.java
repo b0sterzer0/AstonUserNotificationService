@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
-public class UserService {
+public class UserService implements UserServiceInterface {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final KafkaTemplate<String, UserEventDto> kafkaTemplate;
@@ -55,7 +55,7 @@ public class UserService {
         UserDto newUserDto = userMapper.addCreatedAtToDto(userDto, LocalDateTime.now());
         User user = userMapper.toEntity(newUserDto);
         userRepository.save(user);
-        kafkaTemplate.send("user.created", userEventMapper.toDto(user));
+        kafkaTemplate.send("user.events", userEventMapper.toDto(user, "CREATED"));
         return userMapper.toDto(user);
     }
 
@@ -75,6 +75,6 @@ public class UserService {
     public void deleteUser(long id) {
         User user = userRepository.findById(id).orElseThrow(() -> new UserDeletionException(id));
         userRepository.delete(user);
-        kafkaTemplate.send("user.deleted", userEventMapper.toDto(user));
+        kafkaTemplate.send("user.events", userEventMapper.toDto(user, "DELETED"));
     }
 }

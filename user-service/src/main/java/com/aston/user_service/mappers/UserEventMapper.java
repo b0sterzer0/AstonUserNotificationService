@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class UserEventMapper {
-    public UserEventDto toDto(User user) {
-        return new UserEventDto(user.getId(), user.getEmail());
+    public UserEventDto toDto(User user, String eventType) {
+        return new UserEventDto(user.getId(), user.getEmail(), eventType);
     }
 }
