@@ -1,6 +1,7 @@
 package com.aston.notification_service.integration;
 
 import com.aston.notification_service.dto.UserEventDto;
+import com.aston.notification_service.dto.UserEventType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +28,7 @@ public class NotificationControllerServiceIntegrationTest {
 
     @Test
     void shouldReturnSuccessWhenUserCreated() throws Exception {
-        UserEventDto dto = new UserEventDto(1L, EMAIL);
+        UserEventDto dto = new UserEventDto(1L, EMAIL, UserEventType.CREATED);
 
         mockMvc.perform(post("/notification/email/user/created")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -40,7 +41,7 @@ public class NotificationControllerServiceIntegrationTest {
 
     @Test
     void shouldReturnSuccessWhenUserDeleted() throws Exception {
-        UserEventDto dto = new UserEventDto(2L, EMAIL);
+        UserEventDto dto = new UserEventDto(2L, EMAIL, UserEventType.DELETED);
 
         mockMvc.perform(post("/notification/email/user/deleted")
                         .contentType(MediaType.APPLICATION_JSON)

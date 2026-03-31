@@ -1,6 +1,7 @@
 package com.aston.notification_service.listeners;
 
 import com.aston.notification_service.dto.UserEventDto;
+import com.aston.notification_service.dto.UserEventType;
 import com.aston.notification_service.services.NotificationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,7 @@ import static org.mockito.Mockito.verify;
 @SpringBootTest
 class UserEventListenerTest {
     private static final String EMAIL = "test@mail.com";
+    private static final String USER_EVENT_TOPIC = "user.events";
 
 
     @Container
@@ -48,8 +50,8 @@ class UserEventListenerTest {
 
     @Test
     void shouldHandleUserCreatedEvent() {
-        UserEventDto dto = new UserEventDto(1L, EMAIL);
-        kafkaTemplate.send("user.created", dto);
+        UserEventDto dto = new UserEventDto(1L, EMAIL, UserEventType.CREATED);
+        kafkaTemplate.send(USER_EVENT_TOPIC, dto);
         await()
                 .atMost(5, TimeUnit.SECONDS)
                 .untilAsserted(() ->
@@ -59,8 +61,8 @@ class UserEventListenerTest {
 
     @Test
     void shouldHandleUserDeletedEvent() {
-        UserEventDto dto = new UserEventDto(2L, EMAIL);
-        kafkaTemplate.send("user.deleted", dto);
+        UserEventDto dto = new UserEventDto(2L, EMAIL, UserEventType.DELETED);
+        kafkaTemplate.send(USER_EVENT_TOPIC, dto);
         await()
                 .atMost(5, TimeUnit.SECONDS)
                 .untilAsserted(() ->

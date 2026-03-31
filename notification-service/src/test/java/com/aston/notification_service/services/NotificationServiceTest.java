@@ -1,6 +1,7 @@
 package com.aston.notification_service.services;
 
 import com.aston.notification_service.dto.UserEventDto;
+import com.aston.notification_service.dto.UserEventType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -21,7 +22,7 @@ public class NotificationServiceTest {
 
     @Test
     void userCreatedEventEmailNotification_shouldReturnCorrectResponse() {
-        UserEventDto dto = new UserEventDto(1L, EMAIL);
+        UserEventDto dto = new UserEventDto(1L, EMAIL, UserEventType.CREATED);
 
         Map<String, String> result =
                 notificationService.userCreatedEventEmailNotification(dto);
@@ -36,7 +37,7 @@ public class NotificationServiceTest {
 
     @Test
     void userDeletedEventEmailNotification_shouldReturnCorrectResponse() {
-        UserEventDto dto = new UserEventDto(2L, EMAIL);
+        UserEventDto dto = new UserEventDto(2L, EMAIL, UserEventType.DELETED);
 
         Map<String, String> result =
                 notificationService.userDeletedEventEmailNotification(dto);

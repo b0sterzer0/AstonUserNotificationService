@@ -3,6 +3,7 @@ package com.aston.user_service.services;
 import com.aston.user_service.annotations.Loggable;
 import com.aston.user_service.dto.UserDto;
 import com.aston.user_service.dto.UserEventDto;
+import com.aston.user_service.dto.UserEventType;
 import com.aston.user_service.exceptions.UserDeletionException;
 import com.aston.user_service.exceptions.UserNotFoundException;
 import com.aston.user_service.mappers.UserEventMapper;
@@ -10,6 +11,7 @@ import com.aston.user_service.mappers.UserMapper;
 import com.aston.user_service.models.User;
 import com.aston.user_service.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,16 +25,19 @@ public class UserService implements UserServiceInterface {
     private final UserMapper userMapper;
     private final KafkaTemplate<String, UserEventDto> kafkaTemplate;
     private final UserEventMapper userEventMapper;
+    private String userEventsTopic;
 
     @Autowired
     public UserService(UserRepository userRepository,
                        UserMapper userMapper,
                        KafkaTemplate<String, UserEventDto> kafkaTemplate,
-                       UserEventMapper userEventMapper) {
+                       UserEventMapper userEventMapper,
+                       @Value("${kafka.topics.user-events}") String userEventsTopic) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
         this.kafkaTemplate = kafkaTemplate;
         this.userEventMapper = userEventMapper;
+        this.userEventsTopic = userEventsTopic;
     }
 
     @Loggable
@@ -55,7 +60,7 @@ public class UserService implements UserServiceInterface {
         UserDto newUserDto = userMapper.addCreatedAtToDto(userDto, LocalDateTime.now());
         User user = userMapper.toEntity(newUserDto);
         userRepository.save(user);
-        kafkaTemplate.send("user.events", userEventMapper.toDto(user, "CREATED"));
+        kafkaTemplate.send(userEventsTopic, userEventMapper.toDto(user, UserEventType.CREATED));
         return userMapper.toDto(user);
     }
 
@@ -75,6 +80,6 @@ public class UserService implements UserServiceInterface {
     public void deleteUser(long id) {
         User user = userRepository.findById(id).orElseThrow(() -> new UserDeletionException(id));
         userRepository.delete(user);
-        kafkaTemplate.send("user.events", userEventMapper.toDto(user, "DELETED"));
+        kafkaTemplate.send(userEventsTopic, userEventMapper.toDto(user, UserEventType.DELETED));
     }
 }

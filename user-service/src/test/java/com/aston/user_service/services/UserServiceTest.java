@@ -2,17 +2,20 @@ package com.aston.user_service.services;
 
 import com.aston.user_service.dto.UserDto;
 import com.aston.user_service.dto.UserEventDto;
+import com.aston.user_service.dto.UserEventType;
 import com.aston.user_service.exceptions.UserNotFoundException;
 import com.aston.user_service.mappers.UserEventMapper;
 import com.aston.user_service.mappers.UserMapper;
 import com.aston.user_service.models.User;
 import com.aston.user_service.repositories.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
 
@@ -25,6 +28,9 @@ public class UserServiceTest {
     private static final String USER_NAME = "Ivan";
     private static final String EMAIL = "ivan@mail.com";
     private static final int AGE = 25;
+    private static final String USER_EVENT_TOPIC = "user.events";
+    @InjectMocks
+    private UserService userService;
 
     @Mock
     private UserRepository userRepository;
@@ -35,8 +41,10 @@ public class UserServiceTest {
     @Mock
     private UserEventMapper userEventMapper;
 
-    @InjectMocks
-    private UserService userService;
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(userService, "userEventsTopic", USER_EVENT_TOPIC);
+    }
 
     @Test
     void getUser_ShouldReturnUser_WhenIdExists() {
@@ -65,31 +73,31 @@ public class UserServiceTest {
     void createUser_ShouldSaveAndSendKafkaMessage() {
         UserDto inputDto = new UserDto(null, USER_NAME, EMAIL, AGE, null);
         User user = new User();
-        UserEventDto eventDto = new UserEventDto(1L, EMAIL, "CREATED");
+        UserEventDto eventDto = new UserEventDto(1L, EMAIL, UserEventType.CREATED);
 
         when(userMapper.addCreatedAtToDto(eq(inputDto), any())).thenReturn(inputDto);
         when(userMapper.toEntity(inputDto)).thenReturn(user);
-        when(userEventMapper.toDto(user, "CREATED")).thenReturn(eventDto);
+        when(userEventMapper.toDto(user, UserEventType.CREATED)).thenReturn(eventDto);
         when(userMapper.toDto(user)).thenReturn(inputDto);
 
         userService.createUser(inputDto);
 
         verify(userRepository).save(user);
-        verify(kafkaTemplate).send(eq("user.events"), eq(eventDto));
+        verify(kafkaTemplate).send(eq(USER_EVENT_TOPIC), eq(eventDto));
     }
 
     @Test
     void deleteUser_ShouldDeleteAndSendKafkaMessage() {
         long id = 1L;
         User user = new User();
-        UserEventDto eventDto = new UserEventDto(id, "deleted@mail.com", "DELETED");
+        UserEventDto eventDto = new UserEventDto(id, "deleted@mail.com", UserEventType.DELETED);
 
         when(userRepository.findById(id)).thenReturn(Optional.of(user));
-        when(userEventMapper.toDto(user, "DELETED")).thenReturn(eventDto);
+        when(userEventMapper.toDto(user, UserEventType.DELETED)).thenReturn(eventDto);
 
         userService.deleteUser(id);
 
         verify(userRepository).delete(user);
-        verify(kafkaTemplate).send(eq("user.events"), eq(eventDto));
+        verify(kafkaTemplate).send(eq(USER_EVENT_TOPIC), eq(eventDto));
     }
 }

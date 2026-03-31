@@ -17,14 +17,11 @@ public class UserEventListener {
     }
 
     @Loggable
-    @KafkaListener(topics = "user.created")
-    public void handleUserCreated(UserEventDto userEventDto) {
-        notificationService.userCreatedEventEmailNotification(userEventDto);
-    }
-
-    @Loggable
-    @KafkaListener(topics = "user.deleted")
-    public void handleUserDeleted(UserEventDto userEventDto) {
-        notificationService.userDeletedEventEmailNotification(userEventDto);
+    @KafkaListener(topics = "${kafka.topics.user-events}")
+    public void handleUserEvent(UserEventDto userEventDto) {
+        switch (userEventDto.eventType()) {
+            case CREATED -> notificationService.userCreatedEventEmailNotification(userEventDto);
+            case DELETED -> notificationService.userDeletedEventEmailNotification(userEventDto);
+        }
     }
 }
