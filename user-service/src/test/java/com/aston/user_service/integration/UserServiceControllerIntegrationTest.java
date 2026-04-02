@@ -47,14 +47,14 @@ public class UserServiceControllerIntegrationTest {
         mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(inputDto)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name", is(USER_NAME)))
                 .andExpect(jsonPath("$.email", is(EMAIL)))
                 .andExpect(jsonPath("$.id").exists());
 
         mockMvc.perform(get("/users"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(greaterThan(0))));
+                .andExpect(jsonPath("$._embedded.userDtoList", hasSize(greaterThan(0))));
     }
 
     @Test
@@ -73,7 +73,7 @@ public class UserServiceControllerIntegrationTest {
 
         long id = objectMapper.readTree(response).get("id").asLong();
         mockMvc.perform(delete("/users/" + id))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
         mockMvc.perform(get("/users/" + id))
                 .andExpect(status().isNotFound());
     }
