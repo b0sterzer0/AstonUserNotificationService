@@ -45,19 +45,48 @@ services:
     networks:
       - app-network
 
+  discovery-service:
+    build:
+      context: .
+      dockerfile: discovery-service/Dockerfile
+    environment:
+      - EUREKA_PORT=8761
+    ports:
+      - "${DISCOVERY_SERVICE_PORT}:8761"
+    networks:
+      - app-network
+
+  gateway-service:
+    build:
+      context: .
+      dockerfile: gateway-service/Dockerfile
+    container_name: gateway-service
+    ports:
+      - "${GATEWAY_PORT:-8082}:8082"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka
+    depends_on:
+      discovery-service:
+        condition: service_started
+    networks:
+      - app-network
+
   user-service:
     build:
-      context: ./user-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: user-service/Dockerfile
     container_name: user-service
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://user-db:${DB_PORT}/${DB_NAME}
       SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka
     ports:
       - "${USER_SERVICE_PORT}:8080"
     depends_on:
+      discovery-service:
+        condition: service_started
       postgres:
         condition: service_healthy
       kafka:
@@ -67,15 +96,19 @@ services:
 
   notification-service:
     build:
-      context: ./notification-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: notification-service/Dockerfile
     container_name: notification-service
     environment:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka
     ports:
       - "${NOTIFICATION_SERVICE_PORT}:8081"
     depends_on:
-      - kafka
+      discovery-service:
+        condition: service_started
+      kafka:
+        condition: service_started
     restart: on-failure
     networks:
       - app-network
