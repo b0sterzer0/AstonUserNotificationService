@@ -45,6 +45,19 @@ services:
     networks:
       - app-network
 
+  config-service:
+    build:
+      context: .
+      dockerfile: config-service/Dockerfile
+    ports:
+      - "${CONFIG_PORT}:8888"
+    env_file:
+      - .env
+    environment:
+      - GITHUB_CONFIG_URL=${GITHUB_CONFIG_URL}
+      - GITHUB_CONFIG_USERNAME=${GITHUB_CONFIG_USERNAME}
+      - GITHUB_CONFIG_TOKEN=${GITHUB_CONFIG_TOKEN}
+
   discovery-service:
     build:
       context: .
