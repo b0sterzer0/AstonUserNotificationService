@@ -4,10 +4,13 @@ import com.aston.user_service.dto.UserDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.cloud.config.client.ConfigClientAutoConfiguration;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -15,14 +18,30 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.hamcrest.Matchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers
+@EnableAutoConfiguration(exclude = {
+        ConfigClientAutoConfiguration.class
+})
+@TestPropertySource(properties = {
+        "spring.config.import=",
+        "spring.cloud.config.enabled=false",
+        "eureka.client.enabled=false",
+        "eureka.client.register-with-eureka=false",
+        "eureka.client.fetch-registry=false",
+        "kafka.topics.user-events=test.user.events",
+        "spring.jpa.hibernate.ddl-auto=create-drop",
+        "spring.kafka.producer.key-serializer=org.apache.kafka.common.serialization.StringSerializer",
+        "spring.kafka.producer.value-serializer=org.springframework.kafka.support.serializer.JsonSerializer",
+        "spring.kafka.producer.properties.spring.json.type.mapping=userEventDto:com.aston.user_service.dto.UserEventDto"
+})
 public class UserServiceControllerIntegrationTest {
+
     private static final String USER_NAME = "John Doe";
     private static final String EMAIL = "john@example.com";
 
@@ -32,7 +51,7 @@ public class UserServiceControllerIntegrationTest {
 
     @Container
     @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.4.0"));
+    static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.6.0"));
 
     @Autowired
     private MockMvc mockMvc;
@@ -66,14 +85,18 @@ public class UserServiceControllerIntegrationTest {
     @Test
     void shouldDeleteUser() throws Exception {
         UserDto inputDto = new UserDto(null, "To Delete", "delete@example.com", 20, null);
+
         String response = mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(inputDto)))
+                .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
 
         long id = objectMapper.readTree(response).get("id").asLong();
+
         mockMvc.perform(delete("/users/" + id))
                 .andExpect(status().isNoContent());
+
         mockMvc.perform(get("/users/" + id))
                 .andExpect(status().isNotFound());
     }
